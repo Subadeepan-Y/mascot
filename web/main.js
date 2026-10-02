@@ -121,6 +121,12 @@ function ensureWindow(widget) {
         if (!isQuitting) {
           e.preventDefault();
           w.hide();
+          ["subtitle", "game", "menu", "island"].forEach((wName) => {
+            const childWin = wins[wName];
+            if (childWin && !childWin.isDestroyed()) {
+              try { childWin.hide(); } catch {}
+            }
+          });
         }
       });
       return w;
@@ -320,6 +326,14 @@ function setupIpc() {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (!win || win.isDestroyed()) return;
     try { win.hide(); } catch { /* tearing down */ }
+    if (win === wins.mascot) {
+      ["subtitle", "game", "menu", "island"].forEach((wName) => {
+        const childWin = wins[wName];
+        if (childWin && !childWin.isDestroyed()) {
+          try { childWin.hide(); } catch {}
+        }
+      });
+    }
   });
   ipcMain.on("win-show", (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -345,6 +359,10 @@ function setupIpc() {
   // widget visibility: mascot brain owns state, main owns windows
   ipcMain.on("widget-show", (_event, { widget, msg }) => {
     if (!["subtitle", "game", "menu", "island", "hub"].includes(widget)) return;
+    const mw = wins.mascot;
+    if (widget !== "hub" && (!mw || mw.isDestroyed() || !mw.isVisible())) {
+      return; // Never show subtitles or companion widgets when mascot is closed/hidden!
+    }
     const w = ensureWindow(widget);
     if (msg && msg.anchor && widget !== "island" && (msg.pw || msg.w)) {
       // anchor popups beside the mascot rect, inside the arena
@@ -414,8 +432,7 @@ function setupIpc() {
     gameRunning = !!on;
   });
   ipcMain.on("quit-app", () => {
-    isQuitting = true;
-    app.quit();
+    quitEntireApp();
   });
 
   // update system (GitHub Releases)
@@ -505,6 +522,22 @@ function setupIpc() {
   });
 }
 
+function quitEntireApp() {
+  isQuitting = true;
+  for (const k of Object.keys(wins)) {
+    const w = wins[k];
+    if (w && !w.isDestroyed()) {
+      try { w.hide(); w.destroy(); } catch {}
+      wins[k] = null;
+    }
+  }
+  try {
+    if (bridgeProc) bridgeProc.kill("SIGKILL");
+    require("child_process").execSync("taskkill /F /T /IM bridge.exe", { stdio: "ignore", windowsHide: true });
+  } catch {}
+  app.exit(0);
+}
+
 // right-click context menu: clean, minimal options only
 async function refreshTray() {
   if (!tray || tray.isDestroyed()) return;
@@ -521,7 +554,7 @@ async function refreshTray() {
       },
     },
     { type: "separator" },
-    { label: "Quit", click: () => { isQuitting = true; app.quit(); } },
+    { label: "Quit", click: () => { quitEntireApp(); } },
   ]);
   tray.setContextMenu(menu);
 }
@@ -619,10 +652,9 @@ app.whenReady().then(() => {
 });
 
 app.on("window-all-closed", () => {
-  if (bridgeProc) bridgeProc.kill();
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") quitEntireApp();
 });
 
 app.on("before-quit", () => {
-  if (bridgeProc) bridgeProc.kill();
+  if (!isQuitting) quitEntireApp();
 });
