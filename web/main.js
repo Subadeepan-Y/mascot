@@ -167,7 +167,7 @@ function ensureWindow(widget) {
         backgroundColor: "#0a0a0a",
         icon: APP_ICON,
         resizable: true,
-        skipTaskbar: false,
+        skipTaskbar: true,
         autoHideMenuBar: true,
         webPreferences: {
           preload: path.join(__dirname, "preload.js"),
@@ -598,16 +598,10 @@ app.whenReady().then(() => {
   });
   setupIpc();
   ensureWindow("mascot");
-  const isHiddenLaunch = process.argv.includes("--hidden");
-  // Show the hub on normal launch (user clicked shortcut / post-install) or
-  // when explicitly requested. Hidden launch (Windows startup) stays tray-only.
-  if (process.argv.includes("--show-hub") || !isHiddenLaunch) {
-    // Small delay so the mascot appears first, then the dashboard opens
-    setTimeout(() => {
-      const hw = ensureWindow("hub");
-      hw.show();
-      hw.focus();
-    }, 800);
+  if (process.argv.includes("--show-hub")) {
+    const hw = ensureWindow("hub");
+    hw.show();
+    hw.focus();
   }
   // renderer failed to boot (no geometry reports): show anyway after 3s so
   // the mascot is never silently missing. Small window: harmless fallback.
