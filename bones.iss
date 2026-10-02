@@ -3,7 +3,7 @@
 ; Run: "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" bones.iss
 
 #define AppName "Bones"
-#define AppVersion "1.0.2"
+#define AppVersion "1.0.4"
 #define AppPublisher "Bones Desktop"
 #define AppExeName "Bones.exe"
 #define SourceDir "D:\New folder (4)\dist\win-unpacked"
@@ -19,7 +19,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir={#OutputDir}
-OutputBaseFilename=Bones Setup 1.0.2
+OutputBaseFilename=Bones Setup 1.0.4
 SetupIconFile=D:\New folder (4)\mascot\assets\buddy.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 Compression=lzma2/ultra64

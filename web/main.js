@@ -19,18 +19,32 @@ const { spawn } = require("child_process");
 const { clampPos, defaultPos, anchorPopup, subtitleGeom, arenaFor } = require("./winlayout");
 
 app.setName("Bones");
-if (process.platform === "win32") {
-  app.setAppUserModelId("com.bones.companion");
-}
 
 // Exempt from background throttling and efficiency mode
 app.commandLine.appendSwitch("disable-renderer-backgrounding");
 app.commandLine.appendSwitch("disable-background-timer-throttling");
 app.commandLine.appendSwitch("disable-backgrounding-occluded-windows");
 
-const APP_ICON = path.join(__dirname, "..", "assets", "buddy.ico");
+const APP_ICON = app.isPackaged
+  ? path.join(process.resourcesPath, "assets", "buddy.ico")
+  : path.join(__dirname, "..", "assets", "buddy.ico");
 const BRIDGE_URL = "http://127.0.0.1:17385";
 const UPDATE_REPO = "Subadeepan-Y/mascot";
+
+let hiddenParent = null;
+function getHiddenParent() {
+  if (!hiddenParent || hiddenParent.isDestroyed()) {
+    hiddenParent = new BrowserWindow({
+      show: false,
+      width: 0,
+      height: 0,
+      skipTaskbar: true,
+      focusable: false,
+      frame: false,
+    });
+  }
+  return hiddenParent;
+}
 
 function isNewerVersion(remote, local) {
   if (!remote) return false;
@@ -67,12 +81,14 @@ function arenaAt(x, y) {
 }
 
 function mkWindow(opts) {
+  const parent = getHiddenParent();
   const w = new BrowserWindow({
     show: false,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
     skipTaskbar: true,
+    parent: parent,
     icon: APP_ICON,
     title: "Bones",
     resizable: false,
@@ -160,7 +176,9 @@ function ensureWindow(widget) {
       return w;
     },
     hub: () => {
+      const parent = getHiddenParent();
       const w = new BrowserWindow({
+        show: false,
         width: 480,
         height: 860,
         title: "Bones",
@@ -168,6 +186,8 @@ function ensureWindow(widget) {
         icon: APP_ICON,
         resizable: true,
         skipTaskbar: true,
+        type: "toolbar",
+        parent: parent,
         autoHideMenuBar: true,
         webPreferences: {
           preload: path.join(__dirname, "preload.js"),
@@ -440,7 +460,8 @@ function setupIpc() {
 
   ipcMain.handle("check-update", async () => {
     try {
-      const res = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, {
+      // Query recent releases so we can find the newest one that actually has a downloadable .exe
+      const res = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases`, {
         headers: { "User-Agent": "Bones-Companion-Updater" },
         signal: AbortSignal.timeout(6000),
       });
@@ -448,18 +469,28 @@ function setupIpc() {
         if (res.status === 404) return { ok: false, error: "No releases found on GitHub yet." };
         return { ok: false, error: `GitHub API error: ${res.status}` };
       }
-      const data = await res.json();
-      const latestTag = (data.tag_name || "").replace(/^v/, "").trim();
+      const releases = await res.json();
+      if (!Array.isArray(releases) || releases.length === 0) {
+        return { ok: true, hasUpdate: false };
+      }
+      // Pick the newest non-draft release that actually contains an .exe installer
+      const valid = releases.find((r) => {
+        return !r.draft && (r.assets || []).some((a) => (a.name || "").endsWith(".exe"));
+      });
+      if (!valid) {
+        return { ok: true, hasUpdate: false, message: "No release with installer asset found." };
+      }
+      const latestTag = (valid.tag_name || "").replace(/^v/, "").trim();
       const currentVersion = app.getVersion();
       const hasUpdate = isNewerVersion(latestTag, currentVersion);
-      const asset = (data.assets || []).find((a) => a.name.endsWith(".exe"));
+      const asset = (valid.assets || []).find((a) => (a.name || "").endsWith(".exe"));
       return {
         ok: true,
         hasUpdate,
         currentVersion,
         latestVersion: latestTag,
-        releaseNotes: data.body || "",
-        releaseName: data.name || `Version ${latestTag}`,
+        releaseNotes: valid.body || "",
+        releaseName: valid.name || `Version ${latestTag}`,
         downloadUrl: asset ? asset.browser_download_url : null,
       };
     } catch (err) {
@@ -469,12 +500,14 @@ function setupIpc() {
 
   ipcMain.handle("start-update", async (event, downloadUrl) => {
     if (!downloadUrl) return { ok: false, error: "No download URL provided" };
-    const tempExe = path.join(app.getPath("temp"), "Bones-Setup-Update.exe");
+    // Unique timestamped filename prevents EPERM lock collisions with prior downloads
+    const tempExe = path.join(app.getPath("temp"), `Bones-Update-${Date.now()}.exe`);
     try {
       const res = await fetch(downloadUrl);
       if (!res.ok) return { ok: false, error: `Download failed: HTTP ${res.status}` };
       const totalBytes = Number(res.headers.get("content-length")) || 0;
       let downloadedBytes = 0;
+      let lastReportedPercent = -1;
       const fileStream = fs.createWriteStream(tempExe);
 
       const reader = res.body.getReader();
@@ -485,7 +518,10 @@ function setupIpc() {
         fileStream.write(Buffer.from(value));
         if (totalBytes > 0) {
           const percent = Math.round((downloadedBytes / totalBytes) * 100);
-          try { event.sender.send("update-progress", percent); } catch {}
+          if (percent !== lastReportedPercent) {
+            lastReportedPercent = percent;
+            try { event.sender.send("update-progress", percent); } catch {}
+          }
         }
       }
       fileStream.end();
@@ -538,6 +574,10 @@ function quitEntireApp() {
       try { w.hide(); w.destroy(); } catch {}
       wins[k] = null;
     }
+  }
+  if (hiddenParent && !hiddenParent.isDestroyed()) {
+    try { hiddenParent.destroy(); } catch {}
+    hiddenParent = null;
   }
   try {
     if (bridgeProc) bridgeProc.kill("SIGKILL");
