@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Bones Game</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  #box {
+    width: 220px; background: rgba(18, 18, 20, 0.96); color: #f5f5f5;
+    border: 1px solid #33363d; border-radius: 14px; padding: 12px 14px; display: none;
+    font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
+  }
+  #box.below { margin-top: 0; }
+  #text { font-weight: 600; font-size: 13px; color: #ffffff; letter-spacing: -0.01em; }
+  #sub {
+    font-size: 11px; font-weight: 500; color: #a0a0a5; margin-top: 2px; min-height: 1em;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  #btns { display: flex; gap: 8px; margin-top: 10px; }
+  button {
+    flex: 1; padding: 6px 12px; border: 1px solid #3a3d45; border-radius: 8px;
+    background: #24262c; color: #f0f0f0; cursor: pointer;
+    font: 600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    transition: all 0.15s ease;
+  }
+  button:hover { background: #32353e; border-color: #525660; color: #ffffff; }
+  button:active { transform: scale(0.97); }
+  #yes {
+    background: #ffffff; color: #0a0a0a; border-color: #ffffff; font-weight: 700;
+  }
+  #yes:hover { background: #e5e5e5; border-color: #e5e5e5; color: #000000; }
+  #exit {
+    background: #202227; color: #e2e2e2; border-color: #383a42; font-weight: 600;
+  }
+  #exit:hover { background: #2c2f37; border-color: #4f535e; }
+</style>
+</head>
+<body>
+<div id="box">
+  <div id="text"></div>
+  <div id="sub"></div>
+  <div id="btns">
+    <button id="yes" type="button">Yes</button>
+    <button id="no" type="button">No</button>
+    <button id="exit" type="button" style="display:none">Exit</button>
+  </div>
+</div>
+<script>
+(() => {
+  "use strict";
+  const api = window.electron;
+  const box = document.getElementById("box");
+  const elText = document.getElementById("text");
+  const elSub = document.getElementById("sub");
+  const bYes = document.getElementById("yes");
+  const bNo = document.getElementById("no");
+  const bExit = document.getElementById("exit");
+  async function screenOf(e) {
+    try {
+      const p = await api.getPos();
+      return { x: Math.round(p.x + e.clientX), y: Math.round(p.y + e.clientY) };
+    } catch { return {}; }
+  }
+  bYes.addEventListener("click", async (e) => {
+    api.widgetEvent({ type: "game-choice", which: "yes", ...(await screenOf(e)) });
+  });
+  bNo.addEventListener("click", async (e) => {
+    api.widgetEvent({ type: "game-choice", which: "no", ...(await screenOf(e)) });
+  });
+  bExit.addEventListener("click", async (e) => {
+    api.widgetEvent({ type: "game-choice", which: "exit", ...(await screenOf(e)) });
+  });
+  api.onWidgetMsg((m) => {
+    if (!m) return;
+    if (m.op === "hide") { box.style.display = "none"; return; }
+    if (m.op === "show") {
+      elText.textContent = m.text || "";
+      elSub.textContent = m.sub || "";
+      bYes.textContent = m.yesLabel || "Yes";
+      bYes.style.display = m.showYes === false ? "none" : "";
+      bNo.style.display = m.showNo === false ? "none" : "";
+      bExit.style.display = m.showExit ? "inline-block" : "none";
+      // must be an explicit value, not "": #box is display:none in this
+      // stylesheet, so clearing the inline style falls back to none and the
+      // box stays invisible while its buttons measure 0x0.
+      box.style.display = "block";
+      requestAnimationFrame(() => api.winResize(232, box.scrollHeight + 8));
+    } else if (m.op === "sub" && m.sub !== undefined) {
+      elSub.textContent = m.sub;
+    }
+  });
+})();
+</script>
+</body>
+</html>

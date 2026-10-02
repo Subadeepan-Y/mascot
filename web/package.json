@@ -1,0 +1,74 @@
+{
+  "name": "bones-companion",
+  "version": "1.0.2",
+  "description": "Bones — desktop companion",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/engine.test.js && node test/manifest.test.js && node test/rig.test.js && node test/rigmanifest.test.js && node test/pet.test.js && node test/petmanifest.test.js && node test/winlayout.test.js && node test/arch.test.js",
+    "build:js": "npx esbuild js/brain.js --bundle=false --minify --outfile=dist/brain.min.js && npx esbuild winlayout.js --bundle=false --minify --outfile=dist/winlayout.min.js",
+    "dist": "npm run build:js && electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.bones.companion",
+    "productName": "Bones",
+    "copyright": "Copyright © 2026",
+    "directories": {
+      "output": "../../dist"
+    },
+    "files": [
+      "**/*",
+      "!js/brain.js",
+      "!test/**",
+      "!**/*.map",
+      "!**/qa_*.png",
+      "!**/pv_*.png",
+      "!**/rig*.html",
+      "!**/preview.html",
+      "!**/rig.json",
+      "!**/rig.html",
+      "!node_modules/.cache/**",
+      "!build/**"
+    ],
+    "extraResources": [
+      {
+        "from": "../bridge",
+        "to": "bridge",
+        "filter": [
+          "bridge.exe"
+        ]
+      },
+      {
+        "from": "../assets",
+        "to": "assets"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "../assets/buddy.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Bones",
+      "installerIcon": "../assets/buddy.ico",
+      "uninstallerIcon": "../assets/buddy.ico",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.25.12"
+  }
+}

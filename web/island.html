@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Bones</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  #island {
+    width: 424px; background: rgba(20,20,24,.94); color: #f2f2f2;
+    border: 1px solid #3a3d44; border-radius: 14px; padding: 10px 14px;
+    display: none; font: 13px/1.45 "Segoe UI", system-ui, sans-serif;
+    box-shadow: 0 8px 28px rgba(0,0,0,.5);
+  }
+  #title { font-weight: 700; }
+  #btns { display: flex; gap: 8px; margin-top: 8px; }
+  button {
+    padding: 5px 14px; border: 1px solid #55585f; border-radius: 8px;
+    background: #2a2d33; color: #fff; cursor: pointer; font: 600 12px "Segoe UI", sans-serif;
+  }
+  button:hover { background: #35383f; }
+</style>
+</head>
+<body>
+<div id="island">
+  <div id="title"></div>
+  <div id="text"></div>
+  <div id="btns">
+    <button id="ack" type="button">Got it</button>
+    <button id="snooze" type="button">Snooze 10m</button>
+  </div>
+</div>
+<script>
+(() => {
+  "use strict";
+  const api = window.electron;
+  const el = document.getElementById("island");
+  document.getElementById("ack").addEventListener("click", () => {
+    api.widgetEvent({ type: "island-action", action: "got_it" });
+  });
+  document.getElementById("snooze").addEventListener("click", () => {
+    api.widgetEvent({ type: "island-action", action: "snooze" });
+  });
+  api.onWidgetMsg((m) => {
+    if (!m) return;
+    if (m.op === "hide") { el.style.display = "none"; return; }
+    if (m.op === "show") {
+      document.getElementById("title").textContent = m.title || "";
+      document.getElementById("text").textContent = m.text || "";
+      document.getElementById("btns").style.display = m.buttons === false ? "none" : "";
+      el.style.display = "block"; // explicit: #island is display:none in CSS
+      requestAnimationFrame(() => api.winResize(440, el.scrollHeight + 20));
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Bones Menu</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  #menu {
+    width: 208px; background: #1d1f24; border: 1px solid #3a3d44;
+    border-radius: 10px; padding: 6px; display: none;
+    font: 12px/1.9 "Segoe UI", sans-serif; color: #e8e8e8;
+    box-shadow: 0 8px 28px rgba(0,0,0,.55);
+  }
+  .row { padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+  .row:hover { background: #31343b; }
+</style>
+</head>
+<body>
+<div id="menu"></div>
+<script>
+(() => {
+  "use strict";
+  const api = window.electron;
+  const menu = document.getElementById("menu");
+  let timer = 0;
+  function close(notify) {
+    menu.style.display = "none";
+    clearTimeout(timer);
+    if (notify) api.widgetEvent({ type: "menu-closed" });
+  }
+  api.onWidgetMsg((m) => {
+    if (!m) return;
+    if (m.op === "hide") { close(false); return; }
+    if (m.op === "show" && Array.isArray(m.items)) {
+      menu.innerHTML = "";
+      for (const it of m.items) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.textContent = it.label;
+        row.addEventListener("click", () => {
+          api.widgetEvent({ type: "menu-action", action: it.action });
+          close(false); // brain hides the window on action
+        });
+        menu.appendChild(row);
+      }
+      menu.style.display = "block"; // explicit: #menu is display:none in CSS
+      requestAnimationFrame(() => api.winResize(220, menu.scrollHeight + 14));
+      clearTimeout(timer);
+      timer = setTimeout(() => close(true), 15000); // no orphan menus
+    }
+  });
+})();
+</script>
+</body>
+</html>
