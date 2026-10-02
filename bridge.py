@@ -317,7 +317,15 @@ class Brain:
             self.animation = "hero_sleep"
         if self.sleep_machine.consume_reaction():
             self.on_wake()
-        events = self.tracker.update(ctx, now_wall) if self.screen_reactions else []
+        events = self.tracker.update(ctx, now_wall) if (self.screen_reactions or getattr(self.settings, "doomscroll_guard", False)) else []
+        if "doomscroll_intervention" in events and getattr(self.settings, "doomscroll_guard", False):
+            from sensing import find_and_close_social_window
+            closed = find_and_close_social_window()
+            line = self.deck.pick_event("doomscroll_intervention", now_wall) or "alright, that's enough doomscrolling! closing this!"
+            self.say(line, 6.0, "alert")
+            self.pop_island("Focus Guard", line)
+            self.last_intervention = {"app": ctx.title or "social media", "closed": closed, "time": now_wall}
+
         low_title = title.casefold()
         low_exe = exe.casefold()
         is_video = (category == "video"

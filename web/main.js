@@ -500,8 +500,16 @@ function setupIpc() {
         require("child_process").execSync("taskkill /F /T /IM bridge.exe", { stdio: "ignore", windowsHide: true });
       } catch {}
 
-      // Launch the downloaded setup completely silently so it updates in-place seamlessly
-      const proc = spawn(tempExe, ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/FORCECLOSEAPPLICATIONS"], {
+      // Current install dir - force updater to overwrite the exact running directory
+      const installDir = path.dirname(process.execPath);
+      bridgeLog(`Launching updater ${tempExe} into ${installDir}\n`);
+
+      const proc = spawn(tempExe, [
+        "/VERYSILENT",
+        "/SUPPRESSMSGBOXES",
+        "/FORCECLOSEAPPLICATIONS",
+        `/DIR=${installDir}`,
+      ], {
         detached: true,
         stdio: "ignore",
       });
