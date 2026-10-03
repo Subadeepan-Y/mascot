@@ -1,0 +1,912 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bones</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #141414;
+    --card-hover: #1c1c1c;
+    --border: #262626;
+    --border-light: #3f3f3f;
+    --text: #ffffff;
+    --text-muted: #888888;
+    --text-subtle: #555555;
+    --btn-bg: #1c1c1c;
+    --btn-border: #333333;
+    --active-bg: #ffffff;
+    --active-text: #000000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 20px;
+    user-select: none;
+    overflow-x: hidden;
+  }
+  .container {
+    max-width: 440px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    object-fit: cover;
+    background: #222;
+  }
+  .title-group h1 {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+  .title-group p {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: ui-monospace, monospace;
+    letter-spacing: 0.05em;
+  }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: ui-monospace, monospace;
+    border: 1px solid var(--border);
+    background: #111;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px #fff;
+  }
+  .dot.off {
+    background: #555;
+    box-shadow: none;
+  }
+
+  /* Power Bar */
+  .power-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .power-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    transition: all 0.15s ease;
+  }
+  .power-btn:hover {
+    background: #222;
+    border-color: #555;
+    transform: translateY(-1px);
+  }
+  .power-btn:active {
+    transform: translateY(1px);
+  }
+  .power-btn.primary {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+  .power-btn.primary:hover {
+    background: #e6e6e6;
+  }
+
+  /* Card */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s ease;
+  }
+  .card:hover {
+    border-color: var(--border-light);
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .card-tag {
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--text);
+    background: #000;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  /* Button Groups */
+  .segmented {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #000;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .seg-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 6px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: center;
+  }
+  .seg-btn:hover {
+    color: #fff;
+  }
+  .seg-btn.active {
+    background: var(--active-bg);
+    color: var(--active-text);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(255,255,255,0.2);
+  }
+
+  /* Switch row */
+  .switch-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .switch-label {
+    display: flex;
+    flex-direction: column;
+  }
+  .switch-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .switch-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .switch-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid var(--border);
+    background: #000;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 58px;
+    text-align: center;
+  }
+  .switch-btn.on {
+    background: #fff;
+    color: #000;
+    border-color: #fff;
+  }
+
+  /* Actions Grid */
+  .action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .act-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .act-btn:hover {
+    background: #1c1c1c;
+    border-color: #555;
+    transform: translateY(-1px);
+  }
+  .act-btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: #ffffff;
+    color: #000000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+    opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  /* Update Card & Progress */
+  .update-box {
+    margin-top: 12px;
+    padding: 12px;
+    background: #141414;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .update-notes {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: #0a0a0a;
+    padding: 8px;
+    border-radius: 6px;
+    max-height: 80px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    line-height: 1.4;
+    border: 1px solid #222;
+  }
+  .progress-wrap {
+    width: 100%;
+    height: 8px;
+    background: #222;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    margin-top: 4px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #3b82f6;
+    border-radius: 4px;
+    transition: width 0.15s ease;
+  }
+  .update-status {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <img class="avatar" src="bones_logo.png" alt="Bones" onerror="this.style.display='none'" />
+      <div class="title-group">
+        <h1>Bones</h1>
+        <p>DESKTOP COMPANION</p>
+      </div>
+    </div>
+    <div class="status-badge" id="statusBadge">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">CONNECTING</span>
+    </div>
+  </header>
+
+  <!-- Power Actions -->
+  <div class="power-bar">
+    <button class="power-btn primary" id="btnRestart">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Restart Mascot
+    </button>
+    <button class="power-btn" id="btnStop">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      Stop Mascot
+    </button>
+  </div>
+
+  <!-- Card: Size -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Mascot Size</span>
+      <span class="card-tag" id="sizeLabel">65%</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 4px 2px;">
+      <span style="font-size: 11px; color: var(--text-muted); font-family: ui-monospace, monospace;">1%</span>
+      <input type="range" id="sizeSlider" min="1" max="100" value="65" style="flex: 1; accent-color: #ffffff; cursor: pointer;" />
+      <span style="font-size: 11px; color: var(--text-muted); font-family: ui-monospace, monospace;">100%</span>
+    </div>
+  </div>
+
+  <!-- Card: Startup & Background -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Startup & Background</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Start with Windows</span>
+        <span class="switch-desc">Launch quietly to system tray</span>
+      </div>
+      <button class="switch-btn" id="btnStartup">ON</button>
+    </div>
+  </div>
+
+  <!-- Card: Focus & Doomscroll Limiter -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Focus & Doomscroll Limiter</span>
+      <span class="card-tag" id="doomscrollTag">OFF</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Close Distractions</span>
+        <span class="switch-desc">Auto-closes social media/YT after limit</span>
+      </div>
+      <button class="switch-btn" id="btnDoomscroll">OFF</button>
+    </div>
+    <div id="doomscrollSliderRow" style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
+        <span>Limit Duration</span>
+        <span id="doomscrollThresholdLabel" style="font-weight: 700; color: #fff;">15 mins</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 11px; color: var(--text-muted); font-family: ui-monospace, monospace;">1m</span>
+        <input type="range" id="doomscrollSlider" min="1" max="60" value="15" style="flex: 1; accent-color: #ffffff; cursor: pointer;" />
+        <span style="font-size: 11px; color: var(--text-muted); font-family: ui-monospace, monospace;">60m</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card: Chatter -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Chatter Frequency</span>
+      <span class="card-tag" id="chatterLabel">NORMAL</span>
+    </div>
+    <div class="segmented">
+      <button class="seg-btn" data-chatter="quiet">Quiet</button>
+      <button class="seg-btn active" data-chatter="normal">Normal</button>
+      <button class="seg-btn" data-chatter="chatty">Chatty</button>
+    </div>
+  </div>
+
+  <!-- Card: Motion -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Display & Motion</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Reduced Motion</span>
+        <span class="switch-desc">Calm stationary idle</span>
+      </div>
+      <button class="switch-btn" id="btnMotion">OFF</button>
+    </div>
+  </div>
+
+  <!-- Card: Languages & Banter -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Languages & Banter</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Tamil</span>
+        <span class="switch-desc">Tanglish roasts & commentary</span>
+      </div>
+      <button class="switch-btn" id="btnLangTamil" data-lang="lang_tamil">ON</button>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Kannada</span>
+        <span class="switch-desc">ಕನ್ನಡ spoken banter & quips</span>
+      </div>
+      <button class="switch-btn" id="btnLangKannada" data-lang="lang_kannada">ON</button>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Telugu</span>
+        <span class="switch-desc">తెలుగు teasing dialogues</span>
+      </div>
+      <button class="switch-btn" id="btnLangTelugu" data-lang="lang_telugu">ON</button>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Malayalam</span>
+        <span class="switch-desc">മലയാളം playful desktop remarks</span>
+      </div>
+      <button class="switch-btn" id="btnLangMalayalam" data-lang="lang_malayalam">ON</button>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Hindi</span>
+        <span class="switch-desc">हिंदी casual companion lines</span>
+      </div>
+      <button class="switch-btn" id="btnLangHindi" data-lang="lang_hindi">ON</button>
+    </div>
+  </div>
+
+  <!-- Card: Cinema Mode -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Cinema Mode</span>
+      <span class="card-tag" id="cinemaTag">AUTO (YT & VLC)</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title">Fullscreen Auto-Vanish</span>
+        <span class="switch-desc">Hides mascot during movies</span>
+      </div>
+      <button class="switch-btn" id="btnCinemaTest">TEST</button>
+    </div>
+  </div>
+
+  <!-- Card: Actions & Mini-Games -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Play & Trigger</span>
+    </div>
+    <div class="action-grid">
+      <button class="act-btn" id="btnGame">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        Catch & Catch
+      </button>
+      <button class="act-btn" id="btnTour">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Animation Tour
+      </button>
+      <button class="act-btn" id="btnPoke">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Poke Buddy
+      </button>
+      <button class="act-btn" id="btnSnooze">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Snooze 10m
+      </button>
+    </div>
+  </div>
+
+  <!-- Card: Updates -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Software Updates</span>
+      <span class="card-tag" id="appVersionTag">v1.0.0</span>
+    </div>
+    <div class="switch-row">
+      <div class="switch-label">
+        <span class="switch-title" id="updateTitle">Check for Updates</span>
+        <span class="switch-desc" id="updateSubtitle">Automatic GitHub releases</span>
+      </div>
+      <button class="switch-btn" id="btnCheckUpdate" style="width: auto; padding: 0 16px;">CHECK</button>
+    </div>
+    <div class="update-box" id="updateBox" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-weight: 700; color: #60a5fa; font-size: 13px;" id="newVersionText">New Update Available</span>
+        <span class="card-tag" id="newVersionTag">v1.0.1</span>
+      </div>
+      <div class="update-notes" id="updateNotes"></div>
+      <button class="power-btn primary" id="btnDownloadUpdate" style="margin-top: 4px; padding: 8px 12px; font-size: 12px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download & Install Update
+      </button>
+      <div id="updateProgressWrap" style="display: none;">
+        <div class="progress-wrap">
+          <div class="progress-bar" id="updateProgressBar"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 4px;">
+          <span class="update-status" id="updateProgressText">Downloading... 0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Command sent</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const BRIDGE = "http://127.0.0.1:17385";
+  let curSettings = {};
+  let isOnline = false;
+
+  const $ = (id) => document.getElementById(id);
+  const toastEl = $("toast");
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    setTimeout(() => toastEl.classList.remove("show"), 2200);
+  }
+
+  async function api(path, method = "GET", body = null) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 4000);
+    try {
+      const opts = { method, headers: { "Content-Type": "application/json" }, signal: ctrl.signal };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(BRIDGE + path, opts);
+      return await res.json();
+    } finally {
+      clearTimeout(t);
+    }
+  }
+
+  // Poll state
+  async function poll() {
+    try {
+      const state = await api("/state");
+      setOnline(true);
+      updateUI(state);
+    } catch {
+      setOnline(false);
+    }
+  }
+
+  function setOnline(online) {
+    if (online === isOnline) return;
+    isOnline = online;
+    const dot = $("statusDot");
+    const txt = $("statusText");
+    if (online) {
+      dot.className = "dot";
+      txt.textContent = "ONLINE";
+    } else {
+      dot.className = "dot off";
+      txt.textContent = "OFFLINE";
+    }
+  }
+
+  function updateUI(state) {
+    if (!state) return;
+    const s = state.settings || {};
+    curSettings = s;
+
+    // Snooze: the button is the readout, so it must reflect the live window
+    const snoozeLeft = state.snooze_left || 0;
+    const snoozeBtn = $("btnSnooze");
+    snoozeBtn.classList.toggle("on", snoozeLeft > 0);
+    if (snoozeLeft > 0) {
+      const mins = Math.max(1, Math.ceil(snoozeLeft / 60));
+      snoozeBtn.lastChild.textContent = `Snoozed ${mins}m (wake)`;
+    } else {
+      snoozeBtn.lastChild.textContent = "Snooze 10m";
+    }
+
+    // Cinema
+    const cinemaOn = !!state.cinema_mode;
+    const cinemaMode = state.cinema_override || "auto";
+    $("cinemaTag").textContent = cinemaOn ? "CINEMA ACTIVE" : (
+      cinemaMode === "auto" ? "AUTO (YT & VLC)" : (cinemaMode === "forced_off" ? "FORCED OFF" : "FORCED ON"));
+    $("btnCinemaTest").textContent = cinemaMode === "auto" ? "TEST" : (cinemaOn ? "EXIT" : "AUTO OFF");
+    $("btnCinemaTest").classList.toggle("on", cinemaOn);
+
+    // Mascot size slider
+    const curScale = parseFloat(s.pet_scale) || 0.65;
+    const curPct = Math.max(1, Math.min(100, Math.round(curScale * 100)));
+    const sizeSlider = $("sizeSlider");
+    if (document.activeElement !== sizeSlider) {
+      sizeSlider.value = curPct;
+      $("sizeLabel").textContent = `${curPct}%`;
+    }
+
+    // Startup switch
+    const startAtLogin = s.start_at_login !== false;
+    $("btnStartup").textContent = startAtLogin ? "ON" : "OFF";
+    $("btnStartup").classList.toggle("on", startAtLogin);
+
+    // Doomscroll limiter
+    const dsGuard = !!s.doomscroll_guard;
+    const dsThreshold = parseInt(s.doomscroll_threshold_min, 10) || 15;
+    $("doomscrollTag").textContent = dsGuard ? `${dsThreshold}m LIMIT` : "OFF";
+    $("btnDoomscroll").textContent = dsGuard ? "ON" : "OFF";
+    $("btnDoomscroll").classList.toggle("on", dsGuard);
+    const dsSlider = $("doomscrollSlider");
+    if (document.activeElement !== dsSlider) {
+      dsSlider.value = dsThreshold;
+      $("doomscrollThresholdLabel").textContent = `${dsThreshold} mins`;
+    }
+
+    // Chatter buttons
+    const curChatter = s.chatter_frequency || "normal";
+    document.querySelectorAll("[data-chatter]").forEach((btn) => {
+      const active = btn.dataset.chatter === curChatter;
+      btn.classList.toggle("active", active);
+      if (active) $("chatterLabel").textContent = curChatter.toUpperCase();
+    });
+
+    // Motion switch
+    const mOn = !!s.reduced_motion;
+    $("btnMotion").textContent = mOn ? "ON" : "OFF";
+    $("btnMotion").classList.toggle("on", mOn);
+
+    // Language switches
+    const langs = ["lang_tamil", "lang_kannada", "lang_telugu", "lang_malayalam", "lang_hindi"];
+    langs.forEach((k) => {
+      const btn = document.querySelector(`[data-lang="${k}"]`);
+      if (btn) {
+        const val = s[k] !== false;
+        btn.textContent = val ? "ON" : "OFF";
+        btn.classList.toggle("on", val);
+      }
+    });
+  }
+
+  // Bind size slider
+  let sizeDebounce = null;
+  $("sizeSlider").addEventListener("input", (e) => {
+    const val = parseInt(e.target.value, 10);
+    $("sizeLabel").textContent = `${val}%`;
+    clearTimeout(sizeDebounce);
+    sizeDebounce = setTimeout(async () => {
+      const scale = Math.max(0.01, Math.min(1.0, val / 100));
+      await api("/settings", "POST", { pet_scale: scale });
+      poll();
+    }, 150);
+  });
+
+  // Bind startup switch
+  $("btnStartup").addEventListener("click", async () => {
+    const next = curSettings.start_at_login === false ? true : false;
+    await api("/settings", "POST", { start_at_login: next });
+    if (window.electron && window.electron.setLoginItem) {
+      await window.electron.setLoginItem(next);
+    }
+    showToast(`Start with Windows: ${next ? "ON" : "OFF"}`);
+    poll();
+  });
+
+  // Bind doomscroll limiter
+  $("btnDoomscroll").addEventListener("click", async () => {
+    const next = !curSettings.doomscroll_guard;
+    await api("/settings", "POST", { doomscroll_guard: next });
+    showToast(`Distraction Guard: ${next ? "ON" : "OFF"}`);
+    poll();
+  });
+
+  let dsDebounce = null;
+  $("doomscrollSlider").addEventListener("input", (e) => {
+    const val = parseInt(e.target.value, 10);
+    $("doomscrollThresholdLabel").textContent = `${val} mins`;
+    clearTimeout(dsDebounce);
+    dsDebounce = setTimeout(async () => {
+      await api("/settings", "POST", { doomscroll_threshold_min: val });
+      poll();
+    }, 200);
+  });
+
+  document.querySelectorAll("[data-chatter]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const freq = btn.dataset.chatter;
+      await api("/settings", "POST", { chatter_frequency: freq });
+      showToast(`Chatter set to ${freq}`);
+      poll();
+    });
+  });
+
+  $("btnMotion").addEventListener("click", async () => {
+    const next = !curSettings.reduced_motion;
+    await api("/settings", "POST", { reduced_motion: next });
+    showToast(`Reduced motion: ${next ? "ON" : "OFF"}`);
+    poll();
+  });
+
+  // Language buttons
+  document.querySelectorAll("[data-lang]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const langKey = btn.dataset.lang;
+      const cur = curSettings[langKey] !== false;
+      const next = !cur;
+      await api("/settings", "POST", { [langKey]: next });
+      const name = langKey.replace("lang_", "").toUpperCase();
+      showToast(`${name} dialogues: ${next ? "ON" : "OFF"}`);
+      poll();
+    });
+  });
+
+  // Power actions
+  $("btnRestart").addEventListener("click", async () => {
+    showToast("Restarting Mascot...");
+    try {
+      await api("/action", "POST", { action: "restart_mascot" });
+    } catch { /* if bridge restarting */ }
+    setTimeout(poll, 2500);
+  });
+
+  $("btnStop").addEventListener("click", async () => {
+    showToast("Stopping Mascot...");
+    try {
+      await api("/action", "POST", { action: "stop_mascot" });
+    } catch { /* done */ }
+    setTimeout(poll, 1000);
+  });
+
+  // Instant Triggers (preemptive IPC to brain.js + bridge notification)
+  $("btnGame").addEventListener("click", async () => {
+    if (window.electron && window.electron.widgetEvent) {
+      window.electron.widgetEvent({ type: "trigger", action: "game" });
+    }
+    await api("/ack", "POST", { action: "game_request" });
+    showToast("Catch & Catch started!");
+  });
+
+  $("btnTour").addEventListener("click", async () => {
+    if (window.electron && window.electron.widgetEvent) {
+      window.electron.widgetEvent({ type: "trigger", action: "tour" });
+    }
+    await api("/action", "POST", { action: "tour" });
+    showToast("Playing all animations...");
+  });
+
+  $("btnPoke").addEventListener("click", async () => {
+    if (window.electron && window.electron.widgetEvent) {
+      window.electron.widgetEvent({ type: "trigger", action: "poke" });
+    } else {
+      await api("/poke", "POST", {});
+    }
+    showToast("Buddy poked!");
+  });
+
+  $("btnSnooze").addEventListener("click", async () => {
+    if (window.electron && window.electron.widgetEvent) {
+      window.electron.widgetEvent({ type: "trigger", action: "snooze" });
+    }
+    await api("/ack", "POST", { action: "snooze" });
+    poll();
+  });
+
+  $("btnCinemaTest").addEventListener("click", async () => {
+    const res = await api("/action", "POST", { action: "cinema_toggle" });
+    showToast(res && res.cinema_mode ? "Cinema Mode: ON (Mascot Hidden)" : "Cinema Mode: OFF");
+    poll();
+  });
+
+  // Updates (GitHub Releases)
+  let pendingDownloadUrl = null;
+  let pendingExpectedSha256 = null;
+  const updateBox = $("updateBox");
+  const btnCheckUpdate = $("btnCheckUpdate");
+  const btnDownloadUpdate = $("btnDownloadUpdate");
+  const updateProgressWrap = $("updateProgressWrap");
+  const updateProgressBar = $("updateProgressBar");
+  const updateProgressText = $("updateProgressText");
+
+  async function initVersion() {
+    if (window.electron && window.electron.getVersion) {
+      try {
+        const v = await window.electron.getVersion();
+        if (v) $("appVersionTag").textContent = `v${v}`;
+      } catch {}
+    }
+  }
+  initVersion();
+
+  async function checkForUpdate(manual = false) {
+    if (!window.electron || !window.electron.checkUpdate) return;
+    if (manual) btnCheckUpdate.textContent = "...";
+    try {
+      const res = await window.electron.checkUpdate();
+      if (res.ok && res.hasUpdate) {
+        pendingDownloadUrl = res.downloadUrl;
+        pendingExpectedSha256 = res.expectedSha256 || null;
+        $("newVersionText").textContent = res.releaseName || `Version ${res.latestVersion}`;
+        $("newVersionTag").textContent = `v${res.latestVersion}`;
+        $("updateNotes").textContent = res.releaseNotes || "Bug fixes and improvements.";
+        updateBox.style.display = "flex";
+        if (manual) showToast(`Update v${res.latestVersion} is available!`);
+      } else if (res.ok && !res.hasUpdate) {
+        updateBox.style.display = "none";
+        if (manual) showToast("Bones is up to date!");
+      } else {
+        if (manual) showToast(res.error || "Could not check for updates.");
+      }
+    } catch {
+      if (manual) showToast("Error checking updates");
+    } finally {
+      btnCheckUpdate.textContent = "CHECK";
+    }
+  }
+
+  btnCheckUpdate.addEventListener("click", () => checkForUpdate(true));
+
+  btnDownloadUpdate.addEventListener("click", async () => {
+    if (!pendingDownloadUrl) {
+      showToast("No download link found for this release.");
+      return;
+    }
+    btnDownloadUpdate.disabled = true;
+    btnDownloadUpdate.style.opacity = "0.5";
+    updateProgressWrap.style.display = "block";
+    updateProgressBar.style.width = "0%";
+    updateProgressText.textContent = "Connecting...";
+
+    if (window.electron && window.electron.onUpdateProgress) {
+      window.electron.onUpdateProgress((percent) => {
+        updateProgressBar.style.width = `${percent}%`;
+        updateProgressText.textContent = percent >= 100 ? "Installing & Restarting..." : `Downloading... ${percent}%`;
+      });
+    }
+
+    try {
+      const res = await window.electron.startUpdate(pendingDownloadUrl, pendingExpectedSha256);
+      if (!res.ok) {
+        showToast("Update failed: " + res.error);
+        btnDownloadUpdate.disabled = false;
+        btnDownloadUpdate.style.opacity = "1";
+      }
+    } catch (err) {
+      showToast("Update failed: " + err.message);
+      btnDownloadUpdate.disabled = false;
+      btnDownloadUpdate.style.opacity = "1";
+    }
+  });
+
+  // Background check 3 seconds after hub opens
+  setTimeout(() => checkForUpdate(false), 3000);
+
+  setInterval(poll, 600);
+  poll();
+})();
+</script>
+</body>
+</html>

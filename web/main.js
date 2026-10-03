@@ -15,6 +15,7 @@
 const { app, BrowserWindow, Tray, Menu, screen, ipcMain, nativeImage } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { clampPos, defaultPos, anchorPopup, subtitleGeom, arenaFor } = require("./winlayout");
 
@@ -29,7 +30,10 @@ const APP_ICON = app.isPackaged
   ? path.join(process.resourcesPath, "assets", "buddy.ico")
   : path.join(__dirname, "..", "assets", "buddy.ico");
 const BRIDGE_URL = "http://127.0.0.1:17385";
-const UPDATE_REPO = "Subadeepan-Y/mascot";
+const UPDATE_CONFIG = {
+  owner: "Subadeepan-Y",
+  repo: "mascot",
+};
 
 let hiddenParent = null;
 function getHiddenParent() {
@@ -460,8 +464,9 @@ function setupIpc() {
 
   ipcMain.handle("check-update", async () => {
     try {
+      const repoUrl = `https://api.github.com/repos/${UPDATE_CONFIG.owner}/${UPDATE_CONFIG.repo}/releases`;
       // Query recent releases so we can find the newest one that actually has a downloadable .exe
-      const res = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases`, {
+      const res = await fetch(repoUrl, {
         headers: { "User-Agent": "Bones-Companion-Updater" },
         signal: AbortSignal.timeout(6000),
       });
@@ -474,16 +479,26 @@ function setupIpc() {
         return { ok: true, hasUpdate: false };
       }
       // Pick the newest non-draft release that actually contains an .exe installer
+      // and verify that the release author matches the repository owner (prevents unauthorized releases)
       const valid = releases.find((r) => {
-        return !r.draft && (r.assets || []).some((a) => (a.name || "").endsWith(".exe"));
+        const isOwner = !r.author || r.author.login.toLowerCase() === UPDATE_CONFIG.owner.toLowerCase();
+        return !r.draft && isOwner && (r.assets || []).some((a) => (a.name || "").endsWith(".exe"));
       });
       if (!valid) {
-        return { ok: true, hasUpdate: false, message: "No release with installer asset found." };
+        return { ok: true, hasUpdate: false, message: "No official release with installer asset found." };
       }
       const latestTag = (valid.tag_name || "").replace(/^v/, "").trim();
       const currentVersion = app.getVersion();
       const hasUpdate = isNewerVersion(latestTag, currentVersion);
       const asset = (valid.assets || []).find((a) => (a.name || "").endsWith(".exe"));
+
+      // Extract optional SHA-256 hash from release body if publisher specified it (e.g. SHA256: <hash>)
+      let expectedSha256 = null;
+      const shaMatch = (valid.body || "").match(/sha256[:\s=]+([a-fA-F0-9]{64})/i);
+      if (shaMatch) {
+        expectedSha256 = shaMatch[1].toLowerCase();
+      }
+
       return {
         ok: true,
         hasUpdate,
@@ -492,14 +507,18 @@ function setupIpc() {
         releaseNotes: valid.body || "",
         releaseName: valid.name || `Version ${latestTag}`,
         downloadUrl: asset ? asset.browser_download_url : null,
+        expectedSha256,
       };
     } catch (err) {
       return { ok: false, error: err.message };
     }
   });
 
-  ipcMain.handle("start-update", async (event, downloadUrl) => {
+  ipcMain.handle("start-update", async (event, payload) => {
+    const downloadUrl = typeof payload === "string" ? payload : (payload && payload.downloadUrl);
+    const expectedSha256 = payload && payload.expectedSha256 ? payload.expectedSha256.toLowerCase() : null;
     if (!downloadUrl) return { ok: false, error: "No download URL provided" };
+
     // Unique timestamped filename prevents EPERM lock collisions with prior downloads
     const tempExe = path.join(app.getPath("temp"), `Bones-Update-${Date.now()}.exe`);
     try {
@@ -509,13 +528,17 @@ function setupIpc() {
       let downloadedBytes = 0;
       let lastReportedPercent = -1;
       const fileStream = fs.createWriteStream(tempExe);
+      const hasher = crypto.createHash("sha256");
 
       const reader = res.body.getReader();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         downloadedBytes += value.length;
-        fileStream.write(Buffer.from(value));
+        const chunk = Buffer.from(value);
+        fileStream.write(chunk);
+        hasher.update(chunk);
+
         if (totalBytes > 0) {
           const percent = Math.round((downloadedBytes / totalBytes) * 100);
           if (percent !== lastReportedPercent) {
@@ -529,6 +552,15 @@ function setupIpc() {
         fileStream.on("finish", resolve);
         fileStream.on("error", reject);
       });
+
+      // Verify SHA-256 hash if one was specified by the publisher
+      const actualSha256 = hasher.digest("hex").toLowerCase();
+      if (expectedSha256 && actualSha256 !== expectedSha256) {
+        try { fs.unlinkSync(tempExe); } catch {}
+        bridgeLog(`Integrity verification failed! Expected: ${expectedSha256}, Actual: ${actualSha256}\n`);
+        return { ok: false, error: "Security check failed: Installer file was modified or corrupted!" };
+      }
+      bridgeLog(`Installer verified (SHA-256: ${actualSha256})\n`);
 
       // Kill Python bridge and child processes synchronously before spawning updater
       try {
