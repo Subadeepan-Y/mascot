@@ -492,9 +492,13 @@ function setupIpc() {
       const hasUpdate = isNewerVersion(latestTag, currentVersion);
       const asset = (valid.assets || []).find((a) => (a.name || "").endsWith(".exe"));
 
-      // Extract optional SHA-256 hash from release body if publisher specified it (e.g. SHA256: <hash>)
+      // Extract optional SHA-256 hash from release body (supports plain text, markdown links, anchors, or details tags)
       let expectedSha256 = null;
-      const shaMatch = (valid.body || "").match(/sha256[:\s=]+([a-fA-F0-9]{64})/i);
+      const bodyText = valid.body || "";
+      const directMatch = bodyText.match(/(?:sha[-_]?256|checksum|integrity|hash)[^a-f0-9]*([a-fA-F0-9]{64})/i);
+      const linkMatch = bodyText.match(/\[[^\]]+\]\((?:#)?([a-fA-F0-9]{64})\)/i);
+      const standaloneMatch = bodyText.match(/\b([a-fA-F0-9]{64})\b/);
+      const shaMatch = directMatch || linkMatch || standaloneMatch;
       if (shaMatch) {
         expectedSha256 = shaMatch[1].toLowerCase();
       }
